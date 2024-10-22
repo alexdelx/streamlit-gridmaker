@@ -7,10 +7,10 @@ import math
 def draw_grid(image, grid_type, rows, columns, line_thickness, line_opacity, color):
     width, height = image.size
     draw = ImageDraw.Draw(image, "RGBA")
-    
+
     # Converti il colore in un formato RGBA con opacità
     color_with_opacity = (*color, int(line_opacity * 255 / 100))
-    
+
     if grid_type == "Square":
         # Disegna la griglia quadrata
         for i in range(1, rows):
@@ -19,10 +19,10 @@ def draw_grid(image, grid_type, rows, columns, line_thickness, line_opacity, col
         for j in range(1, columns):
             x = j * width / columns
             draw.line([(x, 0), (x, height)], fill=color_with_opacity, width=line_thickness)
-    
+
     elif grid_type == "Hexagonal":
         # Disegna la griglia esagonale
-        hex_radius = min(width // columns, height // (rows + 0.5)) / 2  # Calcola il raggio degli esagoni
+        hex_radius = min(width // (columns + 1), height // (rows + 0.5)) / 2  # Calcola il raggio degli esagoni
         hex_height = math.sqrt(3) * hex_radius  # Altezza dell'esagono
         hex_width = 2 * hex_radius  # Larghezza dell'esagono
         
@@ -45,41 +45,55 @@ def draw_grid(image, grid_type, rows, columns, line_thickness, line_opacity, col
 
 # Funzione per gestire l'accesso con password
 def check_password():
-    password = st.sidebar.text_input("Enter Personal Password", type="password")
-    if password == "PicaxMart.Dungeon00":
-        return True
-    else:
-        st.sidebar.error("Password incorrect. Please try again.")
-        return False
+    password = st.session_state.get("password", "")
+    return password == "PicaxMart.Dungeon00"
 
-# Controlla la password
-if not check_password():
+# Pannello di accesso con password
+if 'password' not in st.session_state:
+    st.session_state.password = ""
+
+st.sidebar.header("Access")
+password_input = st.sidebar.text_input("Enter Personal Password", type="password", value=st.session_state.password)
+if st.sidebar.button("Submit"):
+    st.session_state.password = password_input
+    if check_password():
+        st.session_state.access_granted = True
+    else:
+        st.session_state.access_granted = False
+        st.sidebar.error("Password incorrect. Please try again.")
+
+if not st.session_state.get("access_granted", False):
     st.stop()
 
 # Titolo
 st.title("Grid Image App")
 
 # Colonna: Anteprima dell'immagine caricata e impostazioni
-uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-if uploaded_file is not None:
-    image = Image.open(uploaded_file)
-    st.image(image, caption="Uploaded Image", use_column_width=True)
-    
-    # Scheda con le impostazioni della griglia
-    st.header("Grid Settings")
-    grid_type = st.selectbox("Grid Type", ["Square", "Hexagonal"])
-    color = st.color_picker("Select Grid Color", "#ff0000")
-    rows = st.slider("Rows", min_value=1, max_value=50, value=5)
-    columns = st.slider("Columns", min_value=1, max_value=50, value=5)
-    line_thickness = st.slider("Grid Line Thickness", min_value=1, max_value=10, value=2)
-    line_opacity = st.slider("Grid Line Opacity", min_value=0, max_value=100, value=100)
+col1, col2 = st.columns([2, 1])  # Due colonne: anteprima e impostazioni
 
-    # Disegna la griglia sull'immagine
-    image_with_grid = draw_grid(image.copy(), grid_type, rows, columns, line_thickness, line_opacity, ImageColor.getrgb(color))
-    
-    # Mostra l'immagine con la griglia
-    st.image(image_with_grid, caption="Image with Grid", use_column_width=True)
+with col1:
+    # Sezione per l'anteprima
+    st.header("Image Preview")
+    uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+        
+        # Sezione per impostazioni della griglia
+        st.header("Grid Settings")
+        grid_type = st.selectbox("Grid Type", ["Square", "Hexagonal"])
+        color = st.color_picker("Select Grid Color", "#ff0000")
+        rows = st.slider("Rows", min_value=1, max_value=50, value=5)
+        columns = st.slider("Columns", min_value=1, max_value=50, value=5)
+        line_thickness = st.slider("Grid Line Thickness", min_value=1, max_value=10, value=2)
+        line_opacity = st.slider("Grid Line Opacity", min_value=0, max_value=100, value=100)
 
+        # Disegna la griglia sull'immagine
+        image_with_grid = draw_grid(image.copy(), grid_type, rows, columns, line_thickness, line_opacity, ImageColor.getrgb(color))
+        
+        # Mostra l'immagine con la griglia
+        st.image(image_with_grid, caption="Image with Grid", use_column_width=True)
+
+with col2:
     # Sezione per il download e la rimozione dell'immagine
     st.header("Download/Remove")
     
