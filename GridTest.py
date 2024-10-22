@@ -6,7 +6,7 @@ import math
 # Funzione per creare una griglia
 def draw_grid(image, grid_type, rows, columns, line_thickness, line_opacity, color):
     width, height = image.size
-    draw = ImageDraw.Draw(image, "RGBA")
+    draw = ImageDraw.Draw(image.convert("RGBA"), "RGBA")  # Assicurati che l'immagine sia in formato RGBA
 
     # Converti il colore in un formato RGBA con opacità
     color_with_opacity = (*color, int(line_opacity * 255 / 100))
@@ -75,9 +75,11 @@ with col1:
     # Sezione per l'anteprima
     st.header("Image Preview")
     uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
+    image_with_grid = None  # Inizializza a None
+
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
-        
+
         # Sezione per impostazioni della griglia
         st.header("Grid Settings")
         grid_type = st.selectbox("Grid Type", ["Square", "Hexagonal"])
@@ -87,29 +89,34 @@ with col1:
         line_thickness = st.slider("Grid Line Thickness", min_value=1, max_value=10, value=2)
         line_opacity = st.slider("Grid Line Opacity", min_value=0, max_value=100, value=100)
 
-        # Disegna la griglia sull'immagine
+        # Disegna la griglia sull'immagine se l'immagine è stata caricata
         image_with_grid = draw_grid(image.copy(), grid_type, rows, columns, line_thickness, line_opacity, ImageColor.getrgb(color))
-        
-        # Mostra l'immagine con la griglia
-        st.image(image_with_grid, caption="Image with Grid", use_column_width=True)
+
+        # Mostra l'immagine con la griglia se è stata disegnata
+        if image_with_grid is not None:
+            st.image(image_with_grid, caption="Image with Grid", use_column_width=True)
 
 with col2:
     # Sezione per il download e la rimozione dell'immagine
     st.header("Download/Remove")
     
-    # Buffer per salvare l'immagine con la griglia
-    buf = io.BytesIO()
-    image_with_grid.save(buf, format="PNG")
-    byte_im = buf.getvalue()
-    
-    # Bottone per scaricare l'immagine con la griglia
-    st.download_button(
-        label="Download Image with Grid",
-        data=byte_im,
-        file_name="image_with_grid.png",
-        mime="image/png"
-    )
-    
+    if image_with_grid is not None:  # Controlla che ci sia un'immagine con griglia
+        # Buffer per salvare l'immagine con la griglia
+        buf = io.BytesIO()
+        try:
+            image_with_grid.save(buf, format="PNG")
+            byte_im = buf.getvalue()
+            
+            # Bottone per scaricare l'immagine con la griglia
+            st.download_button(
+                label="Download Image with Grid",
+                data=byte_im,
+                file_name="image_with_grid.png",
+                mime="image/png"
+            )
+        except Exception as e:
+            st.error(f"Error saving image: {e}")
+
     # Bottone per rimuovere l'immagine caricata
     if st.button("Remove Image"):
         st.experimental_rerun()
