@@ -64,11 +64,11 @@ col1, col2 = st.columns([2, 1])  # Due sezioni: anteprima e impostazioni/downloa
 
 with col1:
     st.header("Image Preview")
-    
+
     # Placeholder per l'immagine caricata
     image_with_grid = None
     uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
-    
+
     if uploaded_file:
         image = Image.open(uploaded_file)
         st.image(image, caption="Image Preview", use_column_width=True)  # Visualizza anteprima
@@ -91,7 +91,7 @@ with col1:
 with col2:
     # Sezione per il download e la rimozione dell'immagine
     st.header("Download/Remove")
-    
+
     if image_with_grid:  # Se l'immagine con griglia è disponibile
         # Buffer per salvare l'immagine con la griglia
         buf = io.BytesIO()
